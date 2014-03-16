@@ -3,6 +3,7 @@ DC := gdc
 DCFLAGS := -g -Wall -funittest
 
 INCLUDES := -Ixcb.d
+INCLUDES += -Isource
 #INCLUDES +=
 
 LIBS := $(shell pkg-config --libs xcb)
@@ -10,8 +11,9 @@ LIBS += -lpthread
 #LIBS += $(shell pkg-config --libs libzmq)
 
 vpath %.d source
+vpath %.d source/mwm
 
-OBJS := mwm.o
+OBJS := mwm.o common.o x.o
 BIN := mwm
 
 .PHONY: all clean
