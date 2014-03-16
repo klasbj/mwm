@@ -1,6 +1,6 @@
 
 DC := gdc
-DCFLAGS := -g -Wall
+DCFLAGS := -g -Wall -funittest
 
 INCLUDES := -Ixcb.d
 #INCLUDES +=
@@ -11,8 +11,8 @@ LIBS += -lpthread
 
 vpath %.d source
 
-OBJS := dlangwm.o
-BIN := dlangwm
+OBJS := mwm.o
+BIN := mwm
 
 .PHONY: all clean
 all: $(BIN)
