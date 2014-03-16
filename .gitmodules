@@ -1,3 +1,6 @@
 [submodule "xcb"]
 	path = xcb.d
 	url = /home/klasse/projects/xcb.d
+[submodule "ZeroMQ"]
+	path = ZeroMQ
+	url = https://github.com/D-Programming-Deimos/ZeroMQ.git
