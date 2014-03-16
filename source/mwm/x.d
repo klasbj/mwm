@@ -5,6 +5,7 @@ import std.stdio;
 import std.array;
 import deimos.xcb.xcb;
 import deimos.xcb.xproto;
+import deimos.zmq.zmq;
 import std.c.stdlib;
 
 
@@ -88,6 +89,9 @@ int connect() {
 void run() {
   xcb_generic_event_t *ev = null;
   bool done = false;
+  
+  auto queue = new ZmqSocket(ZMQ_PUB);
+  queue.connect("inproc://wm-q");
 
   if (connect()) {
     writeln("Unable to connect to X server");
@@ -100,6 +104,10 @@ void run() {
     if (!ev) break;
     uint response_type = ev.response_type & ~0x80;
 
+    /* Put together a small message */
+    ubyte[7] m = [ 'w', 'm', ' ', 0x01, 0x02, 0x03, response_type & 0xff ];
+    queue.send(m);
+
     if (response_type in handlers)
       handlers[response_type](ev);
     else
@@ -107,10 +115,14 @@ void run() {
 
     free(ev);
   }while(!quitTheProgram);
+    
+  ubyte[7] m = [ 'w', 'm', ' ', 0x00, 0x00, 0x00, 0x00 ];
+  queue.send(m);
   
   writeln("X Exiting...");
 
   disconnect();
+  destroy(queue);
 }
 
 void disconnect() {
