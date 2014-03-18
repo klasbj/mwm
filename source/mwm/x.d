@@ -18,9 +18,40 @@ ulong selected = 0;
 /* --- */
 
 xcb_window_t root;
-shared(xcb_connection_t*) global_connection = null;
-xcb_connection_t          *c = null;
 xcb_get_geometry_reply_t root_geom;
+
+X c = new X();
+
+class X {
+  private:
+    /* Global context X connection */
+    shared static xcb_connection_t *g_xconnection = null;
+    shared static this() {
+      auto c = xcb_connect(null,null);
+      if (xcb_connection_has_error(c)) {
+        writefln("Cannot open display");
+        /* TODO throw exception? */
+      } else {
+        g_xconnection = cast(shared(xcb_connection_t*))x;
+      }
+    }
+    shared static ~this() {
+      if (g_xconnection != null) {
+        xcb_disconnect(g_xconnection);
+      }
+    }
+
+    /* Object- and thread-local X connection */
+    xcb_connection_t *xconnection = null;
+  public:
+    this() {
+      xconnection = cast(xcb_connection_t*)xconnection;
+    }
+
+    alias xconnection this; // now aint this a cool feature!
+
+    xcb_connection_t get_connection() { return xconnection; }
+}
 
 immutable(void function(xcb_generic_event_t*)[uint]) handlers;
 
@@ -31,23 +62,14 @@ static this() {
   handlers[XCB_CONFIGURE_REQUEST] = &configureRequest;
 }
 
-int connect() {
+int setup() {
   uint                       values[10];
   xcb_screen_t              *s;
 
-  if (global_connection != null) {
-    c = cast(xcb_connection_t*)global_connection;
-    writeln("using existing connection");
-    return 0;
-  }
-  
-  /* open connection with the server */
-  c = xcb_connect(null,null);
-  if (xcb_connection_has_error(c)) {
+  if (c.get_connection() == null) {
     writefln("Cannot open display");
     return 1;
   }
-  global_connection = cast(shared(xcb_connection_t*))c;
   
   /* get the first screen */
   s = xcb_setup_roots_iterator( xcb_get_setup(c) ).data;
@@ -93,7 +115,7 @@ void run() {
   auto queue = new ZmqSocket(ZMQ_PUB);
   queue.connect("inproc://wm-q");
 
-  if (connect()) {
+  if (setup()) {
     writeln("Unable to connect to X server");
   }
 
@@ -127,8 +149,6 @@ void run() {
 
 void disconnect() {
   /* close connection to server */
-  if (c != null)
-    xcb_disconnect(c);
 }
 
 
