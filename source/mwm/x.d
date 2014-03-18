@@ -70,7 +70,7 @@ int setup() {
     writefln("Cannot open display");
     return 1;
   }
-  
+
   /* get the first screen */
   s = xcb_setup_roots_iterator( xcb_get_setup(c) ).data;
   root = s.root;
@@ -83,18 +83,18 @@ int setup() {
       XCB_GRAB_MODE_ASYNC);
   xcb_grab_key(c, true, root, XCB_MOD_MASK_1, 24, XCB_GRAB_MODE_ASYNC,
       XCB_GRAB_MODE_ASYNC);
-  
+
   /*
   xcb_grab_button(c, false, root, XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE,
       XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, root, XCB_NONE, 1, XCB_MOD_MASK_1
       );
-  
+
   xcb_grab_button(c, false, root, XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE,
       XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, root, XCB_NONE, 3, XCB_MOD_MASK_1
       );
       */
-  
-  values[0] = 
+
+  values[0] =
     XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT |
     XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
     XCB_EVENT_MASK_STRUCTURE_NOTIFY |
@@ -102,7 +102,7 @@ int setup() {
     XCB_EVENT_MASK_ENTER_WINDOW |
     XCB_EVENT_MASK_LEAVE_WINDOW;
   xcb_change_window_attributes(c, root, XCB_CW_EVENT_MASK, &values[0]);
-  
+
   xcb_flush(c);
 
   return 0;
@@ -111,7 +111,7 @@ int setup() {
 void run() {
   xcb_generic_event_t *ev = null;
   bool done = false;
-  
+
   auto queue = new ZmqSocket(ZMQ_PUB);
   queue.connect("inproc://wm-q");
 
@@ -137,10 +137,10 @@ void run() {
 
     free(ev);
   }while(!quitTheProgram);
-    
+
   ubyte[7] m = [ 'w', 'm', ' ', 0x00, 0x00, 0x00, 0x00 ];
   queue.send(m);
-  
+
   writeln("X Exiting...");
 
   disconnect();
@@ -189,7 +189,7 @@ void mapRequest(xcb_generic_event_t *ev) {
   writeln("map request: ", *e);
   xcb_map_window(c, e.window);
   Window win;
-  
+
   if (e.window in windows) {
     auto i = countUntil(window_order, e.window);
     selected = i;
@@ -201,7 +201,7 @@ void mapRequest(xcb_generic_event_t *ev) {
     selected = window_order.length;
     window_order ~= win.win;
   }
-    
+
   win.x = 0;
   win.y = 0;
   win.width = root_geom.width - root_geom.x;
