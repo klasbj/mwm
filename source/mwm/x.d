@@ -159,6 +159,7 @@ void raiseWindow(Window w) {
 }
 
 void keyPress(xcb_generic_event_t *ev) {
+  /* TODO Forward all key presses to wm? */
   auto e = cast(xcb_key_press_event_t*)ev;
   auto w = e.child;
   writeln(*e);
@@ -185,6 +186,7 @@ void keyPress(xcb_generic_event_t *ev) {
 }
 
 void mapRequest(xcb_generic_event_t *ev) {
+  /* TODO Leave mapping of the window (?), send a command to wm */
   auto e = cast(xcb_map_request_event_t*)ev;
   writeln("map request: ", *e);
   xcb_map_window(c, e.window);
@@ -229,6 +231,7 @@ void mapRequest(xcb_generic_event_t *ev) {
 }
 
 void unmapNotify(xcb_generic_event_t *ev) {
+  /* TODO send command to wm */
   auto e = cast(xcb_unmap_notify_event_t*)ev;
   if (e.window in windows) {
     auto i = countUntil(window_order, e.window);
@@ -245,8 +248,8 @@ void unmapNotify(xcb_generic_event_t *ev) {
 }
 
 void configureRequest(xcb_generic_event_t *ev) {
+  /* this seems reasonable, I think? */
   auto e = cast(xcb_configure_request_event_t*)ev;
-  writeln("configure request: ", *e);
   int i = 0;
   uint[] values;
   if (e.value_mask & XCB_CONFIG_WINDOW_X)
