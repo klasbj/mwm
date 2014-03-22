@@ -19,8 +19,11 @@ ulong selected = 0;
 
 xcb_window_t root;
 xcb_get_geometry_reply_t root_geom;
+X c;
 
-X c = new X();
+static this() {
+  c = new X();
+}
 
 class X {
   private:
@@ -32,12 +35,12 @@ class X {
         writefln("Cannot open display");
         /* TODO throw exception? */
       } else {
-        g_xconnection = cast(shared(xcb_connection_t*))x;
+        g_xconnection = cast(shared(xcb_connection_t*))c;
       }
     }
     shared static ~this() {
       if (g_xconnection != null) {
-        xcb_disconnect(g_xconnection);
+        xcb_disconnect(cast(xcb_connection_t*)g_xconnection);
       }
     }
 
@@ -45,12 +48,12 @@ class X {
     xcb_connection_t *xconnection = null;
   public:
     this() {
-      xconnection = cast(xcb_connection_t*)xconnection;
+      xconnection = cast(xcb_connection_t*)g_xconnection;
     }
 
     alias xconnection this; // now aint this a cool feature!
 
-    xcb_connection_t get_connection() { return xconnection; }
+    xcb_connection_t* get_connection() { return xconnection; }
 }
 
 immutable(void function(xcb_generic_event_t*)[uint]) handlers;
@@ -117,6 +120,10 @@ void run() {
 
   if (setup()) {
     writeln("Unable to connect to X server");
+    ubyte[7] m = [ 'w', 'm', ' ', 0x00, 0x00, 0x00, 0x00 ];
+    queue.send(m);
+    delete queue;
+    return;
   }
 
   /* event loop */
@@ -144,7 +151,7 @@ void run() {
   writeln("X Exiting...");
 
   disconnect();
-  destroy(queue);
+  delete queue;
 }
 
 void disconnect() {
@@ -232,6 +239,8 @@ void mapRequest(xcb_generic_event_t *ev) {
 
 void unmapNotify(xcb_generic_event_t *ev) {
   /* TODO send command to wm */
+  /* TODO check e.from_configure */
+  /* TODO Remove WM_STATE property */
   auto e = cast(xcb_unmap_notify_event_t*)ev;
   if (e.window in windows) {
     auto i = countUntil(window_order, e.window);

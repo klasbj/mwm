@@ -22,6 +22,6 @@ void run() {
 
   writeln("wm.run exiting...");
 
-  destroy(queue);
+  delete queue;
 }
 
