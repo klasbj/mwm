@@ -4,3 +4,6 @@
 [submodule "ZeroMQ"]
 	path = ZeroMQ
 	url = https://github.com/D-Programming-Deimos/ZeroMQ.git
+[submodule "msgpack-d"]
+	path = msgpack-d
+	url = https://github.com/msgpack/msgpack-d.git

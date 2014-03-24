@@ -5,6 +5,7 @@ DCFLAGS := -g -Wall -funittest
 INCLUDES := -Ixcb.d
 INCLUDES += -Isource
 INCLUDES += -IZeroMQ
+INCLUDES += -Imsgpack-d/src
 #INCLUDES +=
 
 LIBS := $(shell pkg-config --libs xcb)
