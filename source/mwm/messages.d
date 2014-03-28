@@ -5,16 +5,29 @@ import deimos.xcb.xproto;
 
 import std.stdio;
 import std.traits;
+import std.conv;
 
 import mwm.common;
 
 enum MessageType :ubyte {
-  None = 0,
+  None,
   CreateWindow,
   DestroyWindow,
 //  ConfigureRequest,
 //  Screens,
 }
+
+template GenAliases(M...) {
+  static if (M.length == 0) {
+    enum GenAliases = "";
+  } else {
+    enum GenAliases = "alias MessageType." ~ to!string(M[0]) ~ " " ~ to!string(M[0]) ~ "; " ~
+      GenAliases!(M[1..$]);
+  }
+}
+
+mixin(GenAliases!(EnumMembers!MessageType));
+
 
 interface IMessage {
   const ubyte getMessageType() const pure;

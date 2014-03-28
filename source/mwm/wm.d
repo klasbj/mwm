@@ -11,16 +11,16 @@ import msgpack;
 
 bool quit = false;
 
-void handle(Message!(MessageType.None) msg) {
+void handle(Message!None msg) {
   writeln("None message");
   quit = true;
 }
 
-void handle(Message!(MessageType.CreateWindow) msg) {
+void handle(Message!CreateWindow msg) {
   writefln("CreateWindow: %d", msg.window_id);
 }
 
-void handle(Message!(MessageType.DestroyWindow) msg) {
+void handle(Message!DestroyWindow msg) {
   writefln("DestroyWindow: %d", msg.window_id);
 }
 
@@ -50,7 +50,7 @@ void run() {
       handle(msg);
     }
     catch (Exception e) {
-      writeln("caught: %s", e.msg);
+      writefln("caught: %s", e.msg);
     }
   }
 

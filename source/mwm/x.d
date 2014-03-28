@@ -127,7 +127,7 @@ void run() {
 
   if (setup()) {
     writeln("Unable to connect to X server");
-    queue.send(new Message!(MessageType.None)().pack());
+    queue.send(new Message!None().pack());
     return;
   }
 
@@ -146,7 +146,7 @@ void run() {
     free(ev);
   }while(!quitTheProgram);
 
-  queue.send(new Message!(MessageType.None)().pack());
+  queue.send(new Message!None().pack());
 
   writeln("X Exiting...");
 
@@ -199,7 +199,7 @@ void mapRequest(xcb_generic_event_t *ev) {
   xcb_map_window(c, e.window);
   Window win;
 
-  queue.send(new Message!(MessageType.CreateWindow)(e.window).pack());
+  queue.send(new Message!CreateWindow(e.window).pack());
 
   if (e.window in windows) {
     auto i = countUntil(window_order, e.window);
@@ -244,7 +244,7 @@ void unmapNotify(xcb_generic_event_t *ev) {
   /* TODO check e.from_configure */
   /* TODO Remove WM_STATE property */
   auto e = cast(xcb_unmap_notify_event_t*)ev;
-  queue.send(new Message!(MessageType.DestroyWindow)(e.window).pack());
+  queue.send(new Message!DestroyWindow(e.window).pack());
   if (e.window in windows) {
     auto i = countUntil(window_order, e.window);
     windows.remove(e.window);
