@@ -1,6 +1,7 @@
 
 DC := gdc
-DCFLAGS := -g -Wall -funittest
+DCFLAGS := -g -Wall
+#-funittest
 
 INCLUDES := -Ixcb.d
 INCLUDES += -Isource
@@ -14,8 +15,9 @@ LIBS += $(shell pkg-config --libs libzmq)
 
 vpath %.d source
 vpath %.d source/mwm
+vpath %.d msgpack-d/src
 
-OBJS := mwm.o common.o x.o wm.o
+OBJS := mwm.o common.o x.o wm.o msgpack.o messages.o
 BIN := mwm
 
 .PHONY: all clean

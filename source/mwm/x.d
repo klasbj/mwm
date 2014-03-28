@@ -7,9 +7,11 @@ import deimos.xcb.xcb;
 import deimos.xcb.xproto;
 import deimos.zmq.zmq;
 import std.c.stdlib;
+import msgpack;
 
 
 import mwm.common;
+import mwm.messages;
 
 /* These should probably be somewhere else */
 Window[xcb_window_t] windows;
@@ -20,9 +22,16 @@ ulong selected = 0;
 xcb_window_t root;
 xcb_get_geometry_reply_t root_geom;
 X c;
+ZmqSocket queue;
 
 static this() {
   c = new X();
+
+  queue = new ZmqSocket(ZMQ_PUB);
+  queue.connect("inproc://wm-q");
+}
+static ~this() {
+  delete queue;
 }
 
 class X {
@@ -115,14 +124,10 @@ void run() {
   xcb_generic_event_t *ev = null;
   bool done = false;
 
-  auto queue = new ZmqSocket(ZMQ_PUB);
-  queue.connect("inproc://wm-q");
 
   if (setup()) {
     writeln("Unable to connect to X server");
-    ubyte[7] m = [ 'w', 'm', ' ', 0x00, 0x00, 0x00, 0x00 ];
-    queue.send(m);
-    delete queue;
+    queue.send(new Message!(MessageType.None)().pack());
     return;
   }
 
@@ -133,10 +138,6 @@ void run() {
     if (!ev) break;
     uint response_type = ev.response_type & ~0x80;
 
-    /* Put together a small message */
-    ubyte[7] m = [ 'w', 'm', ' ', 0x01, 0x02, 0x03, response_type & 0xff ];
-    queue.send(m);
-
     if (response_type in handlers)
       handlers[response_type](ev);
     else
@@ -145,8 +146,7 @@ void run() {
     free(ev);
   }while(!quitTheProgram);
 
-  ubyte[7] m = [ 'w', 'm', ' ', 0x00, 0x00, 0x00, 0x00 ];
-  queue.send(m);
+  queue.send(new Message!(MessageType.None)().pack());
 
   writeln("X Exiting...");
 
@@ -199,6 +199,8 @@ void mapRequest(xcb_generic_event_t *ev) {
   xcb_map_window(c, e.window);
   Window win;
 
+  queue.send(new Message!(MessageType.CreateWindow)(e.window).pack());
+
   if (e.window in windows) {
     auto i = countUntil(window_order, e.window);
     selected = i;
@@ -242,6 +244,7 @@ void unmapNotify(xcb_generic_event_t *ev) {
   /* TODO check e.from_configure */
   /* TODO Remove WM_STATE property */
   auto e = cast(xcb_unmap_notify_event_t*)ev;
+  queue.send(new Message!(MessageType.DestroyWindow)(e.window).pack());
   if (e.window in windows) {
     auto i = countUntil(window_order, e.window);
     windows.remove(e.window);

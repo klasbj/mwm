@@ -8,61 +8,6 @@ import deimos.zmq.zmq;
 
 shared bool quitTheProgram = false;
 
-T unpack(T)(const ubyte[] data) {
-  T v = *(cast(T*)data[0..T.sizeof].ptr);
-  version(LittleEndian) {
-    ubyte* p = cast(ubyte*)&v;
-    foreach (i; 0 .. T.sizeof/2) {
-      auto tmp = p[i];
-      p[i] = p[T.sizeof - 1 - i];
-      p[T.sizeof - 1 - i] = tmp;
-    }
-  }
-  return v;
-}
-
-T[] unpack(T : T[])(const ubyte[] data, int num) {
-  assert(data.length >= num*T.sizeof);
-  auto v = new T[num];
-  foreach (i; 0..num) {
-    v[i] = unpack!T(data[i*T.sizeof..$]);
-  }
-  return v.dup;
-}
-
-int pack(T)(ubyte* data, const T v) {
-  *(cast(T*)data[0..T.sizeof].ptr) = v;
-  version(LittleEndian) {
-    foreach (i; 0 .. T.sizeof/2) {
-      auto tmp = data[i];
-      data[i] = data[T.sizeof - 1 - i];
-      data[T.sizeof - 1 - i] = tmp;
-    }
-  }
-  return T.sizeof;
-}
-
-int pack(T : T[])(ubyte* data, const T[] v) {
-  foreach (i, vv; v) {
-    pack(&data[i*T.sizeof], vv);
-  }
-  return cast(int)(v.length * T.sizeof);
-}
-
-unittest {
-  assert(unpack!uint([ 0x01, 0x02, 0x03, 0x04 ]) == 0x01020304);
-  assert(unpack!ushort([ 0x03, 0x04 ]) == 0x0304);
-
-  ubyte[8] data;
-  pack!ushort(&data[0], 0x0304);
-  assert(data[0..2] == [ 0x03, 0x04 ]);
-  assert(unpack!ushort(data) == 0x0304);
-
-  assert(unpack!(short[])([ 0xff, 0xff, 0x01, 0x02, 0x03 ], 2) == [ -1, 0x0102 ]);
-  pack!(short[])(&data[1], [ -1, 0x0102 ]);
-  assert(data[1..5] == [ 0xff, 0xff, 0x01, 0x02 ]);
-  assert(unpack!(short[])(data[1..5], 2) == [ -1, 0x0102 ]);
-}
 
 class ZmqSocket {
   private:
