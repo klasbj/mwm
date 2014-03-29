@@ -1,4 +1,4 @@
-module mwv.common;
+module mwm.common;
 
 import std.stdio;
 import std.string;

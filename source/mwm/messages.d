@@ -67,7 +67,7 @@ class Message(MessageType M) : IMessage {
 
   const ubyte getMessageType() const pure { return M; }
 
-  ubyte[] pack() {
+  ubyte[] pack() const {
     return [identifier] ~ msgpack.pack(this);
   }
 }

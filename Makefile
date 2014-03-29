@@ -17,7 +17,7 @@ vpath %.d source
 vpath %.d source/mwm
 vpath %.d msgpack-d/src
 
-OBJS := mwm.o common.o x.o wm.o msgpack.o messages.o
+OBJS := mwm.o common.o x.o wm.o msgpack.o messages.o xrunner.o
 BIN := mwm
 
 .PHONY: all clean
@@ -36,8 +36,8 @@ clean:
 	-rm -f $(BIN)
 
 # dependencies
-mwm.o: x.o wm.o
+mwm.o: xrunner.o wm.o
 
-x.o wm.o: common.o messages.o
+xrunner.o wm.o: x.o common.o messages.o
 
 wm.o: x.o

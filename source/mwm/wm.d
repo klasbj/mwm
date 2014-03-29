@@ -30,6 +30,7 @@ long selected = 0;
 void handle(Message!None msg) {
   writeln("None message");
   quit = true;
+  quitTheProgram = true;
 }
 
 void handle(Message!Screens msg) {
@@ -84,10 +85,10 @@ void handle(Message!ChangeFocus msg) {
     } else if (selected >= window_order.length) {
       selected -= window_order.length;
     }
-    c.raiseWindow(windows[window_order[selected]]);
+    xserver.raiseWindow(windows[window_order[selected]]);
   } else if (msg.to_window in windows) {
     selected = countUntil(window_order, msg.to_window);
-    c.raiseWindow(windows[msg.to_window]);
+    xserver.raiseWindow(windows[msg.to_window]);
   }
 }
 

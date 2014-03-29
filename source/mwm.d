@@ -4,7 +4,7 @@ import deimos.zmq.zmq;
 
 import core.thread;
 
-import mwm.x;
+import mwm.xrunner;
 import mwm.wm;
 import mwm.common;
 
@@ -12,7 +12,7 @@ import mwm.common;
 int main()
 {
   auto wmthread = new Thread(&mwm.wm.run);
-  auto xthread = new Thread(&mwm.x.run);
+  auto xthread = new Thread(&mwm.xrunner.run);
 
   wmthread.start();
 
