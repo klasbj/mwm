@@ -11,10 +11,11 @@ import mwm.common;
 
 enum MessageType :ubyte {
   None,
+  Screens,
   CreateWindow,
   DestroyWindow,
+  ChangeFocus,
 //  ConfigureRequest,
-//  Screens,
 }
 
 template GenAliases(M...) {
@@ -36,13 +37,31 @@ interface IMessage {
 class Message(MessageType M) : IMessage {
   static if (M == MessageType.None) {
   }
+  else static if (M == MessageType.Screens) {
+    xcb_window_t root_window;
+    xcb_get_geometry_reply_t root_geom;
+    this(xcb_window_t root, xcb_get_geometry_reply_t geom) pure {
+      root_window = root;
+      root_geom = geom;
+    }
+  }
   else static if (M == MessageType.CreateWindow || M == MessageType.DestroyWindow) {
     xcb_window_t window_id;
     this(xcb_window_t w) pure {
       window_id = w;
     }
-    this() pure { }
   }
+  else static if (M == MessageType.ChangeFocus) {
+    xcb_window_t to_window;
+    int diff;
+    this(xcb_window_t to_w, int d) pure {
+      to_window = to_w;
+      diff = d;
+    }
+  }
+
+  /* always have a default constructor */
+  this() pure { }
 
   static const ubyte identifier = M;
 

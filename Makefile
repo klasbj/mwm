@@ -34,3 +34,10 @@ $(BIN): $(OBJS)
 clean:
 	-rm -f $(OBJS)
 	-rm -f $(BIN)
+
+# dependencies
+mwm.o: x.o wm.o
+
+x.o wm.o: common.o messages.o
+
+wm.o: x.o

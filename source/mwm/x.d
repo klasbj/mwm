@@ -13,12 +13,6 @@ import msgpack;
 import mwm.common;
 import mwm.messages;
 
-/* These should probably be somewhere else */
-Window[xcb_window_t] windows;
-xcb_window_t[] window_order;
-ulong selected = 0;
-/* --- */
-
 xcb_window_t root;
 xcb_get_geometry_reply_t root_geom;
 X c;
@@ -63,6 +57,34 @@ class X {
     alias xconnection this; // now aint this a cool feature!
 
     xcb_connection_t* get_connection() { return xconnection; }
+
+    void configureWindow(Window w) {
+      ushort mask =
+        XCB_CONFIG_WINDOW_X |
+        XCB_CONFIG_WINDOW_Y |
+        XCB_CONFIG_WINDOW_WIDTH |
+        XCB_CONFIG_WINDOW_HEIGHT |
+        XCB_CONFIG_WINDOW_BORDER_WIDTH |
+        XCB_CONFIG_WINDOW_STACK_MODE;
+
+      uint[] values = [
+        w.origin.x,
+        w.origin.y,
+        w.size.width,
+        w.size.height,
+        0,
+        XCB_STACK_MODE_ABOVE
+          ];
+
+      xcb_configure_window(this, w.window_id, mask, &values[0]);
+      xcb_flush(this);
+    }
+
+    void raiseWindow(Window w) {
+      uint value = XCB_STACK_MODE_ABOVE;
+      xcb_configure_window(c, w.window_id, XCB_CONFIG_WINDOW_STACK_MODE, &value);
+      xcb_flush(c);
+    }
 }
 
 immutable(void function(xcb_generic_event_t*)[uint]) handlers;
@@ -87,6 +109,8 @@ int setup() {
   s = xcb_setup_roots_iterator( xcb_get_setup(c) ).data;
   root = s.root;
   root_geom = *xcb_get_geometry_reply(c, xcb_get_geometry(c, root), null);
+
+  queue.send(new Message!Screens(root, root_geom).pack());
 
   //xcb_grab_key(c, true, root, XCB_MOD_MASK_3, XCB_NO_SYMBOL, XCB_GRAB_MODE_ASYNC,
   xcb_grab_key(c, true, root, XCB_MOD_MASK_1, 44, XCB_GRAB_MODE_ASYNC,
@@ -159,33 +183,21 @@ void disconnect() {
 }
 
 
-void raiseWindow(Window w) {
-  uint value = XCB_STACK_MODE_ABOVE;
-  xcb_configure_window(c, w.win, XCB_CONFIG_WINDOW_STACK_MODE, &value);
-  xcb_flush(c);
-}
-
 void keyPress(xcb_generic_event_t *ev) {
   /* TODO Forward all key presses to wm? */
   auto e = cast(xcb_key_press_event_t*)ev;
   auto w = e.child;
   writeln(*e);
   writeln(e.detail);
-  if (w == root || w == 0 ||
-      selected >= window_order.length) return;
   switch (e.detail) {
     case 24:  // j
       quitTheProgram = true;
       break;
     case 44:  // j
-      selected = min(selected-1, window_order.length-1);
-      raiseWindow(windows[window_order[selected]]);
+      queue.send(new Message!ChangeFocus(0, -1).pack());
       break;
     case 45:  // k
-      if (++selected >= window_order.length) {
-        selected = 0;
-      }
-      raiseWindow(windows[window_order[selected]]);
+      queue.send(new Message!ChangeFocus(0, 1).pack());
       break;
     default:
       break;
@@ -200,43 +212,6 @@ void mapRequest(xcb_generic_event_t *ev) {
   Window win;
 
   queue.send(new Message!CreateWindow(e.window).pack());
-
-  if (e.window in windows) {
-    auto i = countUntil(window_order, e.window);
-    selected = i;
-    win = windows[e.window];
-  } else {
-    win = new Window();
-    win.win = e.window;
-    windows[win.win] = win;
-    selected = window_order.length;
-    window_order ~= win.win;
-  }
-
-  win.x = 0;
-  win.y = 0;
-  win.width = root_geom.width - root_geom.x;
-  win.height = root_geom.height - root_geom.y;
-
-  ushort mask =
-    XCB_CONFIG_WINDOW_X |
-    XCB_CONFIG_WINDOW_Y |
-    XCB_CONFIG_WINDOW_WIDTH |
-    XCB_CONFIG_WINDOW_HEIGHT |
-    XCB_CONFIG_WINDOW_BORDER_WIDTH |
-    XCB_CONFIG_WINDOW_STACK_MODE;
-
-  uint[] values = [
-    0,
-    0,
-    root_geom.width - root_geom.x,
-    root_geom.height - root_geom.y,
-    0,
-    XCB_STACK_MODE_ABOVE
-    ];
-
-  xcb_configure_window(c, e.window, mask, &values[0]);
-  xcb_flush(c);
 }
 
 void unmapNotify(xcb_generic_event_t *ev) {
@@ -245,18 +220,6 @@ void unmapNotify(xcb_generic_event_t *ev) {
   /* TODO Remove WM_STATE property */
   auto e = cast(xcb_unmap_notify_event_t*)ev;
   queue.send(new Message!DestroyWindow(e.window).pack());
-  if (e.window in windows) {
-    auto i = countUntil(window_order, e.window);
-    windows.remove(e.window);
-    window_order = window_order[0..i] ~ window_order[i+1..$];
-    if (selected == i) {
-      /* select a new top window */
-      selected = min(selected-1, window_order.length-1);
-      if (selected < window_order.length) {
-        raiseWindow(windows[window_order[selected]]);
-      }
-    }
-  }
 }
 
 void configureRequest(xcb_generic_event_t *ev) {

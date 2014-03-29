@@ -8,6 +8,38 @@ import deimos.zmq.zmq;
 
 shared bool quitTheProgram = false;
 
+struct Position {
+  int x;
+  int y;
+}
+
+struct Size {
+  uint width;
+  uint height;
+}
+
+class Screen {
+  int id;
+  Position origin;
+  Size size;
+
+  this(int id, int x, int y, uint w, uint h) {
+    this.id = id;
+    this.origin = Position(x,y);
+    this.size = Size(w,h);
+  }
+}
+
+class Window {
+  xcb_window_t window_id;
+  Position origin;
+  Size size;
+
+  this() { }
+  this(xcb_window_t w) {
+    window_id = w;
+  }
+}
 
 class ZmqSocket {
   private:
@@ -85,10 +117,5 @@ class ZmqSocket {
 
       return ret;
     }
-}
-
-class Window {
-  xcb_window_t win;
-  uint x, y, width, height;
 }
 
