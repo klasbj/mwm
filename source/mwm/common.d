@@ -3,7 +3,7 @@ module mwm.common;
 import std.stdio;
 import std.string;
 
-import deimos.xcb.xproto;
+import xcb.xproto;
 import deimos.zmq.zmq;
 
 shared bool quitTheProgram = false;

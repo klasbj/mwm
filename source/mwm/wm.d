@@ -6,7 +6,7 @@ import std.algorithm;
 import std.array;
 
 import deimos.zmq.zmq;
-import deimos.xcb.xproto;
+import xcb.xproto;
 
 import mwm.common;
 import mwm.messages;

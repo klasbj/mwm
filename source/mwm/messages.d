@@ -1,7 +1,7 @@
 module mwm.messages;
 
 import msgpack;
-import deimos.xcb.xproto;
+import xcb.xproto;
 
 import std.stdio;
 import std.traits;

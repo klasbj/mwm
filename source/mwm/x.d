@@ -2,8 +2,8 @@ module mwm.x;
 
 import std.stdio;
 
-import deimos.xcb.xcb;
-import deimos.xcb.xproto;
+import xcb.xcb;
+import xcb.xproto;
 
 import mwm.common;
 
