@@ -15,7 +15,7 @@ enum MessageType :ubyte {
   CreateWindow,
   DestroyWindow,
   ChangeFocus,
-//  ConfigureRequest,
+  ConfigureRequest,
 }
 
 template GenAliases(M...) {
@@ -35,17 +35,7 @@ interface IMessage {
 }
 
 class Message(MessageType M) : IMessage {
-  static if (M == MessageType.None) {
-  }
-  else static if (M == MessageType.Screens) {
-    xcb_window_t root_window;
-    xcb_get_geometry_reply_t root_geom;
-    this(xcb_window_t root, xcb_get_geometry_reply_t geom) pure {
-      root_window = root;
-      root_geom = geom;
-    }
-  }
-  else static if (M == MessageType.CreateWindow || M == MessageType.DestroyWindow) {
+  static if (M == MessageType.CreateWindow || M == MessageType.DestroyWindow) {
     xcb_window_t window_id;
     this(xcb_window_t w) pure {
       window_id = w;
@@ -57,6 +47,12 @@ class Message(MessageType M) : IMessage {
     this(xcb_window_t to_w, int d) pure {
       to_window = to_w;
       diff = d;
+    }
+  }
+  else static if (M == MessageType.ConfigureRequest) {
+    xcb_configure_request_event_t ev;
+    this(xcb_configure_request_event_t *e) {
+      ev = *e;
     }
   }
 

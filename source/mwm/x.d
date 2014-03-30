@@ -4,6 +4,7 @@ import std.stdio;
 
 import xcb.xcb;
 import xcb.xproto;
+import xcb.xinerama;
 
 import mwm.common;
 
@@ -63,6 +64,50 @@ class X {
       uint value = XCB_STACK_MODE_ABOVE;
       xcb_configure_window(this, w.window_id, XCB_CONFIG_WINDOW_STACK_MODE, &value);
       xcb_flush(this);
+    }
+
+    void flush() {
+      xcb_flush(this);
+    }
+
+    const(Screen)[] getScreens() {
+      Screen[] ss;
+      auto active = xcb_xinerama_is_active_reply(this,
+                        xcb_xinerama_is_active(this), null);
+      if (active.state) {
+        // Xinerama is active, get the screens
+        auto res = xcb_xinerama_query_screens_reply(this,
+            xcb_xinerama_query_screens(this), null);
+        ss.length = res.number;
+
+        auto it = xcb_xinerama_query_screens_screen_info_iterator(res);
+        for (; it.rem > 0; xcb_xinerama_screen_info_next(&it)) {
+          ss[res.number - it.rem] = Screen(
+              it.data.x_org, it.data.y_org, it.data.width, it.data.height);
+        }
+
+        // remove duplicate screens
+        ulong w = 0;
+        for (ulong r = 0; r < ss.length; ++r) {
+          foreach (x; ss[0..w])
+            if (x == ss[r])
+              goto next;
+          ss[w++] = ss[r];
+next:
+          cast(void)null;
+        }
+        ss = ss[0..w];
+
+      } else {
+        // No Xinerama, assume one monitor, the root window
+        auto s = xcb_setup_roots_iterator( xcb_get_setup(this) ).data;
+        auto root = s.root;
+        auto root_geom = *xcb_get_geometry_reply(this, xcb_get_geometry(this, root), null);
+        ss.length = 1;
+        ss[0] = Screen(root_geom.x, root_geom.y, root_geom.width, root_geom.height);
+      }
+
+      return ss;
     }
 }
 

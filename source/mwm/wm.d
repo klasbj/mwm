@@ -21,7 +21,8 @@ static this() {
   xserver = new X();
 }
 
-Screen root;
+const(Screen) *root;
+const(Screen)[] screens;
 
 Window[xcb_window_t] windows;
 xcb_window_t[] window_order;
@@ -34,10 +35,9 @@ void handle(Message!None msg) {
 }
 
 void handle(Message!Screens msg) {
-  writefln("Screens: %s %s", msg.root_window, msg.root_geom);
-  root = new Screen(cast(int)msg.root_window,
-      msg.root_geom.x, msg.root_geom.y,
-      msg.root_geom.width, msg.root_geom.height);
+  screens = xserver.getScreens();
+  root = &screens[0];
+  writeln("Screens: ", screens);
 }
 
 void handle(Message!CreateWindow msg) {
@@ -92,6 +92,28 @@ void handle(Message!ChangeFocus msg) {
   }
 }
 
+void handle(Message!ConfigureRequest msg) {
+  int i = 0;
+  uint[] values;
+  auto e = &msg.ev;
+  if (e.value_mask & XCB_CONFIG_WINDOW_X)
+    values ~= e.x;
+  if (e.value_mask & XCB_CONFIG_WINDOW_Y)
+    values ~= e.y;
+  if (e.value_mask & XCB_CONFIG_WINDOW_WIDTH)
+    values ~= e.width;
+  if (e.value_mask & XCB_CONFIG_WINDOW_HEIGHT)
+    values ~= e.height;
+  if (e.value_mask & XCB_CONFIG_WINDOW_BORDER_WIDTH)
+    values ~= e.border_width;
+  if (e.value_mask & XCB_CONFIG_WINDOW_SIBLING)
+    values ~= e.sibling;
+  if (e.value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
+    values ~= e.stack_mode;
+  xcb_configure_window(xserver, e.window, e.value_mask, &values[0]);
+  xserver.flush();
+}
+
 void master_handle(IMessage msg) {
   final switch (msg.getMessageType()) {
     foreach (immutable msgt ; EnumMembers!MessageType) {
@@ -111,6 +133,7 @@ void run() {
   queue.bind("inproc://wm-q");
   queue.bind("ipc://wm-q");
 
+  writeln("wm loop starting...");
   while (!quit) {
     ubyte[] data = queue.recv();
     try {

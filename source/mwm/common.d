@@ -18,13 +18,11 @@ struct Size {
   uint height;
 }
 
-class Screen {
-  int id;
+struct Screen {
   Position origin;
   Size size;
 
-  this(int id, int x, int y, uint w, uint h) {
-    this.id = id;
+  this(int x, int y, uint w, uint h) {
     this.origin = Position(x,y);
     this.size = Size(w,h);
   }

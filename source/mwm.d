@@ -16,7 +16,7 @@ int main()
 
   wmthread.start();
 
-  Thread.sleep(dur!"msecs"(100));
+  Thread.sleep(dur!"msecs"(1000));
 
   xthread.start();
 

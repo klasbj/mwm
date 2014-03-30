@@ -15,7 +15,6 @@ import mwm.messages;
 import mwm.x;
 
 xcb_window_t root;
-xcb_get_geometry_reply_t root_geom;
 X c;
 ZmqSocket queue;
 
@@ -33,6 +32,7 @@ static this() {
   handlers[XCB_MAP_REQUEST] = &mapRequest;
   handlers[XCB_UNMAP_NOTIFY] = &unmapNotify;
   handlers[XCB_CONFIGURE_REQUEST] = &configureRequest;
+  handlers[XCB_CONFIGURE_NOTIFY] = &configureNotify;
 }
 
 int setup() {
@@ -51,9 +51,11 @@ int setup() {
   /* get the first screen */
   s = xcb_setup_roots_iterator( xcb_get_setup(c) ).data;
   root = s.root;
-  root_geom = *xcb_get_geometry_reply(c, xcb_get_geometry(c, root), null);
 
-  queue.send(new Message!Screens(root, root_geom).pack());
+  import core.thread;
+  Thread.sleep(dur!"msecs"(100)); /* sleep to allow zmq to connect */
+
+  queue.send(new Message!Screens().pack());
 
   foreach (immutable x; Keys) {
     xcb_grab_key(c, true, root, x.mod, x.key, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
@@ -186,23 +188,13 @@ void unmapNotify(xcb_generic_event_t *ev) {
 void configureRequest(xcb_generic_event_t *ev) {
   /* this seems reasonable, I think? */
   auto e = cast(xcb_configure_request_event_t*)ev;
-  int i = 0;
-  uint[] values;
-  if (e.value_mask & XCB_CONFIG_WINDOW_X)
-    values ~= e.x;
-  if (e.value_mask & XCB_CONFIG_WINDOW_Y)
-    values ~= e.y;
-  if (e.value_mask & XCB_CONFIG_WINDOW_WIDTH)
-    values ~= e.width;
-  if (e.value_mask & XCB_CONFIG_WINDOW_HEIGHT)
-    values ~= e.height;
-  if (e.value_mask & XCB_CONFIG_WINDOW_BORDER_WIDTH)
-    values ~= e.border_width;
-  if (e.value_mask & XCB_CONFIG_WINDOW_SIBLING)
-    values ~= e.sibling;
-  if (e.value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
-    values ~= e.stack_mode;
-  xcb_configure_window(c, e.window, e.value_mask, &values[0]);
-  xcb_flush(c);
+  queue.send(new Message!ConfigureRequest(e).pack());
 }
 
+void configureNotify(xcb_generic_event_t *ev) {
+  auto e = cast(xcb_configure_notify_event_t*)ev;
+  if (e.window == root) {
+    /* configure notify for the root window, let wm update geometry */
+    queue.send(new Message!Screens().pack());
+  }
+}

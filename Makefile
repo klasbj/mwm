@@ -10,6 +10,7 @@ INCLUDES += -Imsgpack-d/src
 #INCLUDES +=
 
 LIBS := $(shell pkg-config --libs xcb)
+LIBS += $(shell pkg-config --libs xcb-xinerama)
 LIBS += -lpthread
 LIBS += $(shell pkg-config --libs libzmq)
 
