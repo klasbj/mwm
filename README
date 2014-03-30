@@ -1,0 +1,9 @@
+mwm
+---
+
+mwm is a window manager aimed at media center PCs. A main feature is being
+able to control the window management from other sources than X inputs, e.g.
+from a web server.
+
+Currently all windows are shown in fullscreen, and it is possible to switch
+between windows using alt+j and alt+k. alt+q quits the window manager.
