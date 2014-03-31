@@ -4,6 +4,7 @@ import std.stdio;
 import std.traits;
 import std.algorithm;
 import std.array;
+import std.range;
 
 import deimos.zmq.zmq;
 import xcb.xproto;
@@ -27,6 +28,7 @@ const(Screen)[] screens;
 Window[xcb_window_t] windows;
 xcb_window_t[] window_order;
 long selected = 0;
+long default_screen = 0;
 
 void handle(Message!None msg) {
   writeln("None message");
@@ -35,20 +37,31 @@ void handle(Message!None msg) {
 }
 
 void handle(Message!Screens msg) {
-  screens = xserver.getScreens();
+  auto new_screens = xserver.getScreens();
+  if (new_screens.length >= screens.length) {
+    screens = new_screens;
+  } else {
+    foreach (x; new_screens.length .. screens.length) {
+      foreach (w; windows.values) {
+        if (w.screen == x) {
+          w.screen = default_screen;
+        }
+      }
+    }
+    screens = new_screens;
+  }
   root = &screens[0];
   writeln("Screens: ", screens);
 }
 
 void handle(Message!CreateWindow msg) {
-  writefln("CreateWindow: %d", msg.window_id);
   Window w = null;
   if (msg.window_id in windows) {
     auto i = countUntil(window_order, msg.window_id);
     selected = i;
     w = windows[msg.window_id];
   } else {
-    w = new Window(msg.window_id);
+    w = new Window(msg.window_id, default_screen);
     windows[w.window_id] = w;
     selected = window_order.length;
     window_order ~= w.window_id;

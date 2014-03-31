@@ -37,8 +37,14 @@ interface IMessage {
 class Message(MessageType M) : IMessage {
   static if (M == MessageType.CreateWindow || M == MessageType.DestroyWindow) {
     xcb_window_t window_id;
+    long screen;
     this(xcb_window_t w) pure {
       window_id = w;
+      screen = -1;
+    }
+    this(xcb_window_t w, long s) pure {
+      window_id = w;
+      screen = s;
     }
   }
   else static if (M == MessageType.ChangeFocus) {

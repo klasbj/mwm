@@ -2,6 +2,7 @@ module mwm.common;
 
 import std.stdio;
 import std.string;
+import std.conv;
 
 import xcb.xproto;
 import deimos.zmq.zmq;
@@ -30,12 +31,22 @@ struct Screen {
 
 class Window {
   xcb_window_t window_id;
+  long screen;
   Position origin;
   Size size;
 
   this() { }
-  this(xcb_window_t w) {
-    window_id = w;
+  this(xcb_window_t w, long screen) {
+    this.window_id = w;
+    this.screen = screen;
+  }
+
+  override string toString() {
+    return "Window(" ~
+      to!string(window_id) ~ "," ~
+      to!string(screen) ~ "," ~
+      to!string(origin) ~ "," ~
+      to!string(size) ~ ")";
   }
 }
 
