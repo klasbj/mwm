@@ -88,13 +88,12 @@ class X {
 
         // remove duplicate screens
         ulong w = 0;
-        for (ulong r = 0; r < ss.length; ++r) {
+
+reader: for (ulong r = 0; r < ss.length; ++r) {
           foreach (x; ss[0..w])
             if (x == ss[r])
-              goto next;
+              continue reader;
           ss[w++] = ss[r];
-next:
-          cast(void)null;
         }
         ss = ss[0..w];
 
