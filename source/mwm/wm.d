@@ -138,7 +138,6 @@ void run() {
   foreach (immutable msgt ; EnumMembers!MessageType) {
     queue.subscribe([cast(ubyte)msgt]);
   }
-  //queue.subscribe(cast(ubyte[])"wm "); // TODO: ehm.. this can probably be safer...
   queue.bind("inproc://wm-q");
   queue.bind("ipc://wm-q");
 
