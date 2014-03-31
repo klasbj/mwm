@@ -186,7 +186,6 @@ void unmapNotify(xcb_generic_event_t *ev) {
 }
 
 void configureRequest(xcb_generic_event_t *ev) {
-  /* this seems reasonable, I think? */
   auto e = cast(xcb_configure_request_event_t*)ev;
   queue.send(new Message!ConfigureRequest(e).pack());
 }
