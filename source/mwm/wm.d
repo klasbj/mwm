@@ -96,22 +96,31 @@ void handle(Message!ConfigureRequest msg) {
   int i = 0;
   uint[] values;
   auto e = &msg.ev;
-  if (e.value_mask & XCB_CONFIG_WINDOW_X)
-    values ~= e.x;
-  if (e.value_mask & XCB_CONFIG_WINDOW_Y)
-    values ~= e.y;
-  if (e.value_mask & XCB_CONFIG_WINDOW_WIDTH)
-    values ~= e.width;
-  if (e.value_mask & XCB_CONFIG_WINDOW_HEIGHT)
-    values ~= e.height;
-  if (e.value_mask & XCB_CONFIG_WINDOW_BORDER_WIDTH)
-    values ~= e.border_width;
-  if (e.value_mask & XCB_CONFIG_WINDOW_SIBLING)
-    values ~= e.sibling;
-  if (e.value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
-    values ~= e.stack_mode;
-  xcb_configure_window(xserver, e.window, e.value_mask, &values[0]);
-  xserver.flush();
+  if (e.window in windows) {
+    writeln("configureRequest: ", *e);
+    auto w = windows[e.window];
+    w.origin = root.origin;
+    w.size = root.size;
+
+    xserver.configureWindow(w);
+  } else {
+    if (e.value_mask & XCB_CONFIG_WINDOW_X)
+      values ~= e.x;
+    if (e.value_mask & XCB_CONFIG_WINDOW_Y)
+      values ~= e.y;
+    if (e.value_mask & XCB_CONFIG_WINDOW_WIDTH)
+      values ~= e.width;
+    if (e.value_mask & XCB_CONFIG_WINDOW_HEIGHT)
+      values ~= e.height;
+    if (e.value_mask & XCB_CONFIG_WINDOW_BORDER_WIDTH)
+      values ~= e.border_width;
+    if (e.value_mask & XCB_CONFIG_WINDOW_SIBLING)
+      values ~= e.sibling;
+    if (e.value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
+      values ~= e.stack_mode;
+    xcb_configure_window(xserver, e.window, e.value_mask, &values[0]);
+    xserver.flush();
+  }
 }
 
 void master_handle(IMessage msg) {
@@ -135,6 +144,7 @@ void run() {
 
   writeln("wm loop starting...");
   while (!quit) {
+    stdout.flush();
     ubyte[] data = queue.recv();
     try {
       auto msg = unpackMessage(data);

@@ -99,6 +99,7 @@ void run() {
   /* event loop */
   writeln("Starting event loop...");
   do{
+    stdout.flush();
     ev = xcb_wait_for_event(c);
     if (!ev) break;
     uint response_type = ev.response_type & ~0x80;

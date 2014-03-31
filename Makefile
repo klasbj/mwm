@@ -37,8 +37,10 @@ clean:
 	-rm -f $(BIN)
 
 # dependencies
-mwm.o: xrunner.o wm.o
+mwm.o: xrunner.d wm.d
 
-xrunner.o wm.o: x.o common.o messages.o
+xrunner.o wm.o: x.d common.d messages.d
 
-wm.o: x.o
+wm.o: x.d
+
+x.o: common.d
