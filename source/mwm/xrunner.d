@@ -173,7 +173,6 @@ void keyPress(xcb_generic_event_t *ev) {
 void mapRequest(xcb_generic_event_t *ev) {
   auto e = cast(xcb_map_request_event_t*)ev;
   xcb_map_window(c, e.window);
-
   queue.send(new Message!CreateWindow(e.window).pack());
 }
 
