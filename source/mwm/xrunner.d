@@ -172,7 +172,6 @@ void keyPress(xcb_generic_event_t *ev) {
 
 void mapRequest(xcb_generic_event_t *ev) {
   auto e = cast(xcb_map_request_event_t*)ev;
-  writeln("map request: ", *e);
   xcb_map_window(c, e.window);
   Window win;
 
