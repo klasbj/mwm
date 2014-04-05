@@ -19,13 +19,33 @@ struct Size {
   uint height;
 }
 
-struct Screen {
+interface Layout {
+  void arrange(Screen s);
+  void insert(Screen s, const xcb_window_t window);
+  void focus(Screen s, int delta);
+  void move(Screen s, int delta);
+}
+
+class Screen {
   Position origin;
   Size size;
+  /* List windows */
+  /* Layout layout */
 
   this(int x, int y, uint w, uint h) {
     this.origin = Position(x,y);
     this.size = Size(w,h);
+  }
+
+  void sameAs(const Screen s) {
+    this.origin = s.origin;
+    this.size = s.size;
+  }
+
+  override string toString() {
+    return "Screen(" ~
+      to!string(origin) ~ "," ~
+      to!string(size) ~ ")";
   }
 }
 

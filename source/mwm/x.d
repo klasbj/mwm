@@ -70,7 +70,7 @@ class X {
       xcb_flush(this);
     }
 
-    const(Screen)[] getScreens() {
+    Screen[] getScreens() {
       Screen[] ss;
       auto active = xcb_xinerama_is_active_reply(this,
                         xcb_xinerama_is_active(this), null);
@@ -82,7 +82,7 @@ class X {
 
         auto it = xcb_xinerama_query_screens_screen_info_iterator(res);
         for (; it.rem > 0; xcb_xinerama_screen_info_next(&it)) {
-          ss[res.number - it.rem] = Screen(
+          ss[res.number - it.rem] = new Screen(
               it.data.x_org, it.data.y_org, it.data.width, it.data.height);
         }
 
@@ -103,7 +103,7 @@ reader: for (ulong r = 0; r < ss.length; ++r) {
         auto root = s.root;
         auto root_geom = *xcb_get_geometry_reply(this, xcb_get_geometry(this, root), null);
         ss.length = 1;
-        ss[0] = Screen(root_geom.x, root_geom.y, root_geom.width, root_geom.height);
+        ss[0] = new Screen(root_geom.x, root_geom.y, root_geom.width, root_geom.height);
       }
 
       return ss;

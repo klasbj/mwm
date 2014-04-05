@@ -23,7 +23,7 @@ static this() {
 }
 
 const(Screen) *root;
-const(Screen)[] screens;
+Screen[] screens;
 
 Window[xcb_window_t] windows;
 xcb_window_t[] window_order;
@@ -38,8 +38,14 @@ void handle(Message!None msg) {
 
 void handle(Message!Screens msg) {
   auto new_screens = xserver.getScreens();
-  if (new_screens.length >= screens.length) {
-    screens = new_screens;
+
+  /* Update existing screen sizes */
+  foreach (x; 0..min(new_screens.length, screens.length)) {
+    screens[x].sameAs(new_screens[x]);
+  }
+
+  if (new_screens.length > screens.length) {
+    screens ~= new_screens[screens.length..$];
   } else {
     foreach (x; new_screens.length .. screens.length) {
       foreach (w; windows.values) {
@@ -48,10 +54,10 @@ void handle(Message!Screens msg) {
         }
       }
     }
-    screens = new_screens;
+    screens.length = new_screens.length;
   }
   root = &screens[0];
-  writeln("Screens: ", screens);
+  writeln(screens);
 }
 
 void handle(Message!CreateWindow msg) {
