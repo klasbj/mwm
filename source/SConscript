@@ -1,8 +1,7 @@
 Import('env');
 
 srcs = Glob('mwm.d') + Glob('mwm/*.d');
-objs = [env.Object(x) for x in srcs];
 
-Return('objs');
+Return('srcs');
 
 # vim: set ft=python sw=4 ts=4 :

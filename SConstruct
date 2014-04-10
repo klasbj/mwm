@@ -16,10 +16,10 @@ env = Environment(
         );
 
 env.MergeFlags({ 'DPATH' : Split("""
-        ../source
-        ../xcb.d
-        ../ZeroMQ
-        ../msgpack-d/src
+        source
+        xcb.d
+        ZeroMQ
+        msgpack-d/src
         """) });
 
 env.MergeFlags('!pkg-config --libs xcb')
@@ -32,15 +32,14 @@ Export('env');
 # Build everything in the build/ directory
 VariantDir('build', '.', duplicate=0);
 
-# Build msgpack-d and add it to the environment
-msgpack_lib = env.Library('build/msgpack-d/msgpack', [join('build', 'msgpack-d','src','msgpack.d')]);
-env.MergeFlags({'LIBS' : 'msgpack', 'LIBPATH' : ['build/msgpack-d']});
+# Build msgpack-d
+srcs = [join('build', 'msgpack-d', 'src', 'msgpack.d')]
 
-# Object files for the main program
-objs = SConscript('build/source/SConscript');
+# Source files for the main program
+srcs += SConscript('build/source/SConscript');
 
 # Put together the main program
-env.Program('mwm', objs);
+env.Program('mwm', srcs);
 
 
 # vim: set ft=python sw=4 ts=4 :
