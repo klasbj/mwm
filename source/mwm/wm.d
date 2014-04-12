@@ -70,7 +70,8 @@ void handle(Message!CreateWindow msg) {
   w.origin = root.origin;
   w.size = root.size;
 
-  xserver.configureWindow(w);
+  X.configureWindow(w);
+  X.flush();
 }
 
 void handle(Message!DestroyWindow msg) {
@@ -83,7 +84,7 @@ void handle(Message!DestroyWindow msg) {
       /* select a new top window */
       selected = min(selected-1, window_order.length-1);
       if (selected < window_order.length) {
-        xserver.raiseWindow(windows[window_order[selected]]);
+        X.raiseWindow(windows[window_order[selected]]);
       }
     }
   }
@@ -98,10 +99,10 @@ void handle(Message!ChangeFocus msg) {
     } else if (selected >= window_order.length) {
       selected -= window_order.length;
     }
-    xserver.raiseWindow(windows[window_order[selected]]);
+    X.raiseWindow(windows[window_order[selected]]);
   } else if (msg.to_window in windows) {
     selected = countUntil(window_order, msg.to_window);
-    xserver.raiseWindow(windows[msg.to_window]);
+    X.raiseWindow(windows[msg.to_window]);
   }
 }
 
@@ -115,7 +116,7 @@ void handle(Message!ConfigureRequest msg) {
     w.origin = root.origin;
     w.size = root.size;
 
-    xserver.configureWindow(w);
+    X.configureWindow(w);
   } else {
     if (e.value_mask & XCB_CONFIG_WINDOW_X)
       values ~= e.x;
@@ -131,9 +132,9 @@ void handle(Message!ConfigureRequest msg) {
       values ~= e.sibling;
     if (e.value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
       values ~= e.stack_mode;
-    xcb_configure_window(xserver, e.window, e.value_mask, &values[0]);
-    xserver.flush();
+    xcb_configure_window(X.connection, e.window, e.value_mask, &values[0]);
   }
+  X.flush();
 }
 
 void master_handle(IMessage msg) {

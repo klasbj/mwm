@@ -29,16 +29,17 @@ class X {
 
   public:
     /* Object- and thread-local X connection */
-    xcb_connection_t *xconnection = null;
-    this() {
+    static xcb_connection_t *xconnection = null;
+    static this() {
       xconnection = cast(xcb_connection_t*)g_xconnection;
     }
 
     alias xconnection this; // now aint this a cool feature!
 
-    xcb_connection_t* get_connection() { return xconnection; }
+    static xcb_connection_t* get_connection() { return xconnection; }
+    static @property xcb_connection_t* connection() { return xconnection; }
 
-    void configureWindow(Window w) {
+    static void configureWindow(Window w) {
       ushort mask =
         XCB_CONFIG_WINDOW_X |
         XCB_CONFIG_WINDOW_Y |
@@ -56,28 +57,26 @@ class X {
         XCB_STACK_MODE_ABOVE
           ];
 
-      xcb_configure_window(this, w.window_id, mask, &values[0]);
-      xcb_flush(this);
+      xcb_configure_window(connection, w.window_id, mask, &values[0]);
     }
 
-    void raiseWindow(Window w) {
+    static void raiseWindow(Window w) {
       uint value = XCB_STACK_MODE_ABOVE;
-      xcb_configure_window(this, w.window_id, XCB_CONFIG_WINDOW_STACK_MODE, &value);
-      xcb_flush(this);
+      xcb_configure_window(connection, w.window_id, XCB_CONFIG_WINDOW_STACK_MODE, &value);
     }
 
-    void flush() {
-      xcb_flush(this);
+    static void flush() {
+      xcb_flush(connection);
     }
 
-    const(Screen)[] getScreens() {
+    static const(Screen)[] getScreens() {
       Screen[] ss;
-      auto active = xcb_xinerama_is_active_reply(this,
-                        xcb_xinerama_is_active(this), null);
+      auto active = xcb_xinerama_is_active_reply(connection,
+                        xcb_xinerama_is_active(connection), null);
       if (active.state) {
         // Xinerama is active, get the screens
-        auto res = xcb_xinerama_query_screens_reply(this,
-            xcb_xinerama_query_screens(this), null);
+        auto res = xcb_xinerama_query_screens_reply(connection,
+            xcb_xinerama_query_screens(connection), null);
         ss.length = res.number;
 
         auto it = xcb_xinerama_query_screens_screen_info_iterator(res);
@@ -99,9 +98,9 @@ reader: for (ulong r = 0; r < ss.length; ++r) {
 
       } else {
         // No Xinerama, assume one monitor, the root window
-        auto s = xcb_setup_roots_iterator( xcb_get_setup(this) ).data;
+        auto s = xcb_setup_roots_iterator( xcb_get_setup(connection) ).data;
         auto root = s.root;
-        auto root_geom = *xcb_get_geometry_reply(this, xcb_get_geometry(this, root), null);
+        auto root_geom = *xcb_get_geometry_reply(connection, xcb_get_geometry(connection, root), null);
         ss.length = 1;
         ss[0] = Screen(root_geom.x, root_geom.y, root_geom.width, root_geom.height);
       }
