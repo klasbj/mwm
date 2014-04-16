@@ -5,6 +5,7 @@ import std.stdio;
 import xcb.xcb;
 import xcb.xproto;
 import xcb.xinerama;
+import xcb_util.xcb_iccm;
 
 import mwm.common;
 

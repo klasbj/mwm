@@ -18,12 +18,14 @@ env = Environment(
 env.MergeFlags({ 'DPATH' : Split("""
         source
         xcb.d
+        xcb-util-wm.d/d
         ZeroMQ
         msgpack-d/src
         """) });
 
 env.MergeFlags('!pkg-config --libs xcb')
 env.MergeFlags('!pkg-config --libs xcb-xinerama')
+env.MergeFlags('!pkg-config --libs xcb-icccm')
 env.MergeFlags('!pkg-config --libs libzmq')
 env.MergeFlags('-lpthread');
 
