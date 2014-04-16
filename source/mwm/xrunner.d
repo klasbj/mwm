@@ -3,6 +3,7 @@ module xrunner;
 import std.algorithm;
 import std.stdio;
 import std.array;
+import std.process;
 import xcb.xcb;
 import xcb.xproto;
 import deimos.zmq.zmq;
@@ -146,6 +147,13 @@ template KeyPrint(uint K, uint M, Msg...) {
   alias exec = writefln;
 }
 
+template KeySpawn(uint K, uint M, Cmd...) {
+  mixin KeyBase;
+  static assert(Cmd.length > 0);
+  enum args = Cmd;
+  alias exec = spawnProcess;
+}
+
 import std.typetuple;
 
 alias Keys = TypeTuple!(
@@ -154,6 +162,7 @@ alias Keys = TypeTuple!(
   KeySendMessage!(45, XCB_MOD_MASK_1, ChangeFocus, 0, 1),  // k
   KeySendMessage!(59, XCB_MOD_MASK_1, ChangeScreen, 0, -1), // ,
   KeySendMessage!(60, XCB_MOD_MASK_1, ChangeScreen, 0, 1),  // .
+  KeySpawn!(36, XCB_MOD_MASK_1, "xterm"), // return
   KeyPrint!(54, XCB_MOD_MASK_1, "Hello. C has been pressed. %d", 123), // c
   );
 
