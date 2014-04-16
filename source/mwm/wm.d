@@ -12,18 +12,31 @@ import xcb.xproto;
 import mwm.common;
 import mwm.messages;
 import mwm.x;
+import mwm.tag;
+import mwm.layouts;
 import msgpack;
 
 bool quit = false;
 
-X xserver = null;
-
-static this() {
-  xserver = new X();
-}
-
 const(Screen) *root;
 const(Screen)[] screens;
+ulong selected_screen = 0;
+Tag[] tags;
+
+static this() {
+  tags = [ new Tag("1", new Maximize()), new Tag("2", new Maximize()) ];
+}
+
+Tag selectedTag() {
+  wr("selectedTag");
+  auto ts = tags.filter!(a => a.screen == screens[selected_screen]).array;
+  assert(ts.length > 0);
+  if (ts.length > 1) {
+    writeln("WARNING: more than one tag matches a monitor??");
+  }
+  return ts[0];
+}
+
 
 Window[xcb_window_t] windows;
 xcb_window_t[] window_order;
@@ -37,73 +50,89 @@ void handle(Message!None msg) {
 }
 
 void handle(Message!Screens msg) {
-  auto new_screens = xserver.getScreens();
-  if (new_screens.length >= screens.length) {
-    screens = new_screens;
-  } else {
-    foreach (x; new_screens.length .. screens.length) {
-      foreach (w; windows.values) {
-        if (w.screen == x) {
-          w.screen = default_screen;
-        }
+  auto new_screens = X.getScreens();
+
+  bool[ulong] occupied;
+  foreach (i, s; screens) {
+    wr("screen ", i, " ", screens);
+    foreach (t; tags.filter!(a => a.screen == s)) {
+      if (i < new_screens.length && i !in occupied) {
+        t.setScreen(new_screens[i]);
+        occupied[i] = true;
+      } else {
+        t.setScreen(); // offscreen
       }
     }
-    screens = new_screens;
   }
+
+  screens = new_screens;
+  selected_screen = mod(selected_screen, screens.length);
+  wr("Selected screen is now: ", selected_screen, " ", screens[selected_screen]);
+
+  wr("123", screens);
   root = &screens[0];
-  writeln("Screens: ", screens);
+  auto i = 0UL;
+  while (i in occupied) { i++; }
+  wr("bu");
+  foreach (t; tags) {
+    if (i >= screens.length) break;
+    wr("t: ", t);
+    if (t.isOffscreen) {
+      wr("is offscreen");
+      t.setScreen(screens[i]);
+      occupied[i] = true;
+      while (i in occupied) { i++; }
+    }
+  }
+  wr("Tags: ", tags);
+  wr("Screens: ", screens);
 }
 
 void handle(Message!CreateWindow msg) {
   Window w = null;
+  auto tag = selectedTag();
   if (msg.window_id in windows) {
-    auto i = countUntil(window_order, msg.window_id);
-    selected = i;
-    w = windows[msg.window_id];
+    /* Do something? */
   } else {
-    w = new Window(msg.window_id, default_screen);
+    w = new Window(msg.window_id);
+    tag.pushWindow(w);
     windows[w.window_id] = w;
-    selected = window_order.length;
-    window_order ~= w.window_id;
   }
 
-  w.origin = root.origin;
-  w.size = root.size;
-
-  X.configureWindow(w);
-  X.flush();
+  tag.arrange();
 }
 
 void handle(Message!DestroyWindow msg) {
   writefln("DestroyWindow: %d", msg.window_id);
+
+  foreach (t; tags) {
+    t.popWindow(msg.window_id);
+    t.arrange;
+  }
+
   if (msg.window_id in windows) {
-    auto i = countUntil(window_order, msg.window_id);
     windows.remove(msg.window_id);
-    window_order = window_order[0..i] ~ window_order[i+1..$];
-    if (selected == i) {
-      /* select a new top window */
-      selected = min(selected-1, window_order.length-1);
-      if (selected < window_order.length) {
-        X.raiseWindow(windows[window_order[selected]]);
-      }
-    }
   }
 }
 
 void handle(Message!ChangeFocus msg) {
-  if (window_order.length == 0) return;
   if (msg.diff != 0) {
-    selected += msg.diff;
-    if (selected < 0) {
-      selected += window_order.length;
-    } else if (selected >= window_order.length) {
-      selected -= window_order.length;
-    }
-    X.raiseWindow(windows[window_order[selected]]);
+    auto t = selectedTag;
+    t.focus(msg.diff);
+    t.arrange();
   } else if (msg.to_window in windows) {
     selected = countUntil(window_order, msg.to_window);
-    X.raiseWindow(windows[msg.to_window]);
+    X.raiseWindow(windows[msg.to_window]); // TODO better this...
   }
+}
+
+void handle(Message!ChangeScreen msg) {
+  if (msg.diff != 0) {
+    selected_screen = mod(selected_screen + msg.diff, screens.length);
+  } else if (msg.to_screen < screens.length) {
+    selected_screen = msg.to_screen;
+  }
+  wr("Selected screen is now: ", selected_screen, " ", screens[selected_screen]);
 }
 
 void handle(Message!ConfigureRequest msg) {
@@ -113,8 +142,8 @@ void handle(Message!ConfigureRequest msg) {
   if (e.window in windows) {
     writeln("configureRequest: ", *e);
     auto w = windows[e.window];
-    w.origin = root.origin;
-    w.size = root.size;
+    //w.origin = root.origin;
+    //w.size = root.size;
 
     X.configureWindow(w);
   } else {
@@ -133,6 +162,7 @@ void handle(Message!ConfigureRequest msg) {
     if (e.value_mask & XCB_CONFIG_WINDOW_STACK_MODE)
       values ~= e.stack_mode;
     xcb_configure_window(X.connection, e.window, e.value_mask, &values[0]);
+    wr("doh: ", e.window);
   }
   X.flush();
 }
@@ -159,6 +189,8 @@ void run() {
   while (!quit) {
     stdout.flush();
     ubyte[] data = queue.recv();
+    writeln("Received data");
+    stdout.flush();
     try {
       auto msg = unpackMessage(data);
       master_handle(msg);

@@ -102,6 +102,8 @@ void run() {
     stdout.flush();
     ev = xcb_wait_for_event(c);
     if (!ev) break;
+    writeln("Received X event: ", *ev);
+    stdout.flush();
     uint response_type = ev.response_type & ~0x80;
 
     if (response_type in handlers)
@@ -150,6 +152,8 @@ alias Keys = TypeTuple!(
   KeySendMessage!(24, XCB_MOD_MASK_1, None),      // q
   KeySendMessage!(44, XCB_MOD_MASK_1, ChangeFocus, 0, -1), // j
   KeySendMessage!(45, XCB_MOD_MASK_1, ChangeFocus, 0, 1),  // k
+  KeySendMessage!(59, XCB_MOD_MASK_1, ChangeScreen, 0, -1), // ,
+  KeySendMessage!(60, XCB_MOD_MASK_1, ChangeScreen, 0, 1),  // .
   KeyPrint!(54, XCB_MOD_MASK_1, "Hello. C has been pressed. %d", 123), // c
   );
 

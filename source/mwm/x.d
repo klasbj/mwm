@@ -39,14 +39,13 @@ class X {
     static xcb_connection_t* get_connection() { return xconnection; }
     static @property xcb_connection_t* connection() { return xconnection; }
 
-    static void configureWindow(Window w) {
+    static void configureWindow(Window w, int stackmode = -1, Window sibling = null) {
       ushort mask =
         XCB_CONFIG_WINDOW_X |
         XCB_CONFIG_WINDOW_Y |
         XCB_CONFIG_WINDOW_WIDTH |
         XCB_CONFIG_WINDOW_HEIGHT |
-        XCB_CONFIG_WINDOW_BORDER_WIDTH |
-        XCB_CONFIG_WINDOW_STACK_MODE;
+        XCB_CONFIG_WINDOW_BORDER_WIDTH;
 
       uint[] values = [
         w.origin.x,
@@ -54,9 +53,30 @@ class X {
         w.size.width,
         w.size.height,
         0,
+        XCB_NONE,
         XCB_STACK_MODE_ABOVE
           ];
 
+      if (sibling !is null) {
+        mask |= XCB_CONFIG_WINDOW_SIBLING | XCB_CONFIG_WINDOW_STACK_MODE;
+        values[5] = sibling.window_id;
+      }
+
+      if (stackmode >= 0) {
+        mask |= XCB_CONFIG_WINDOW_STACK_MODE;
+        values[6] = stackmode;
+      }
+
+      wr("configure: ", w.window_id);
+      xcb_configure_window(connection, w.window_id, mask, &values[0]);
+    }
+
+    static void stackWindow(Window w, int stackmode, Window sibling = null) {
+      uint[] values = [ XCB_NONE, stackmode ];
+      ushort mask = XCB_CONFIG_WINDOW_SIBLING | XCB_CONFIG_WINDOW_STACK_MODE;
+      if (sibling !is null) {
+        values[0] = sibling.window_id;
+      }
       xcb_configure_window(connection, w.window_id, mask, &values[0]);
     }
 

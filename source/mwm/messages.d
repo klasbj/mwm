@@ -15,6 +15,7 @@ enum MessageType :ubyte {
   CreateWindow,
   DestroyWindow,
   ChangeFocus,
+  ChangeScreen,
   ConfigureRequest,
 }
 
@@ -52,6 +53,14 @@ class Message(MessageType M) : IMessage {
     int diff;
     this(xcb_window_t to_w, int d) pure {
       to_window = to_w;
+      diff = d;
+    }
+  }
+  else static if (M == MessageType.ChangeScreen) {
+    ulong to_screen;
+    int diff;
+    this(ulong to_s, int d) pure {
+      to_screen = to_s;
       diff = d;
     }
   }

@@ -3,11 +3,33 @@ module mwm.common;
 import std.stdio;
 import std.string;
 import std.conv;
+import std.range;
+import std.algorithm;
+import std.traits;
 
 import xcb.xproto;
 import deimos.zmq.zmq;
 
 shared bool quitTheProgram = false;
+
+void wr(T...)(T args) {
+  writeln(args);
+  stdout.flush();
+}
+
+pure @safe T mod(T)(const T x, const T m) if (isIntegral!T) {
+  return ( (x % m) + m ) % m;
+}
+
+unittest {
+  assert(mod(-2, 4) == 2);
+  assert(mod(-4, 4) == 0);
+  assert(mod(0, 4) == 0);
+  assert(mod(1, 4) == 1);
+  assert(mod(2, 4) == 2);
+  assert(mod(3, 4) == 3);
+  assert(mod(4, 4) == 0);
+}
 
 struct Position {
   int x;
@@ -29,22 +51,26 @@ struct Screen {
   }
 }
 
+interface Layout {
+  void arrange(const Screen s, ref Window[] windows);
+}
+
 class Window {
   xcb_window_t window_id;
-  long screen;
   Position origin;
   Size size;
+  bool floating;
 
   this() { }
-  this(xcb_window_t w, long screen) {
+  this(xcb_window_t w) {
     this.window_id = w;
-    this.screen = screen;
   }
+
+  @property bool is_floating() const { return floating; }
 
   override string toString() {
     return "Window(" ~
       to!string(window_id) ~ "," ~
-      to!string(screen) ~ "," ~
       to!string(origin) ~ "," ~
       to!string(size) ~ ")";
   }
